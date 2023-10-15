@@ -3,8 +3,8 @@
 ## TODO List
 - [ ] Preprocess
   - [ ] DataLoader
-  - [ ] Re-labeling
-  - [ ] Handling json
+  - [v] Re-labeling
+  - [v] Handling json
 - [ ] Compare 1, Vanilla
   - [ ] SVM
   - [ ] CRF
