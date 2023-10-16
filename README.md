@@ -1,10 +1,10 @@
 # cose362
 
 ## TODO List
-- [ ] Preprocess
-  - [ ] DataLoader
-  - [v] Re-labeling
-  - [v] Handling json
+- [x] Preprocess
+  - [x] DataLoader
+  - [x] Re-labeling
+  - [x] Handling json
 - [ ] Compare 1, Vanilla
   - [ ] SVM
   - [ ] CRF
