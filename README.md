@@ -54,3 +54,15 @@
 * We will use [Accelerator](https://huggingface.co/docs/accelerate/package_reference/accelerator) in huggingface
   * [Tutorial1](https://huggingface.co/docs/transformers/perf_train_gpu_one)
   * [Tutorial2](https://huggingface.co/docs/transformers/v4.20.1/en/perf_train_gpu_one)
+
+# Setting up Development Environment
+* Recommend Anaconda to make virtual environment
+1. Install Anaconda
+1. Make Anaconda Environment & Activate
+```shell
+anaconda install python=3.7 pytorch=1.10.2 pandas scikit-learn
+
+# to install Kobert
+pip install git+https://git@github.com/SKTBrain/KoBERT.git@master kobert-transformers
+```
+3. Create `./dataset` directory and place `NLNE2202211219.json` file from 국립국어원 말뭉치 in it.
