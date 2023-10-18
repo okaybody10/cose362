@@ -45,7 +45,6 @@ class KernelSVM(nn.Module):
         output = torch.matmul(X, self.weight) + self.bias
         # Hinge loss
         loss = 0.5 * self.weight.pow(2).sum() + self.C * torch.clamp(1 - y * output, min=0).sum()
-        print("Sie of Loss: ",loss.size())
         return loss
 
     def predict(self, x):
