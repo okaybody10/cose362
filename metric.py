@@ -10,6 +10,9 @@ def quadrant(class_index, predict, truth):
     return {"true_p": true_p, "false_p": false_p, "false_n": false_n, "true_n": true_n}
 
 def precision_micro(num_classes, predict, truth):
+    predict = torch.tensor([torch.argmax(predict[i]) for i in range(predict.size()[0])]) # make as index-based classified tensor to compre naturally
+    truth = torch.tensor([torch.argmax(truth[i]) for i in range(truth.size()[0])])
+
     true_p_of_all_c = 0
     false_p_of_all_c = 0
     for c in range(num_classes):
@@ -20,6 +23,9 @@ def precision_micro(num_classes, predict, truth):
 
 
 def precision_macro(num_classes, predict, truth):
+    predict = torch.tensor([torch.argmax(predict[i]) for i in range(predict.size()[0])]) # make as index-based classified tensor to compre naturally
+    truth = torch.tensor([torch.argmax(truth[i]) for i in range(truth.size()[0])])
+
     sum_of_precision_of_class_c = 0
     for c in range(num_classes):
         quad = quadrant(class_index=c, predict=predict, truth=truth)
@@ -30,6 +36,9 @@ def precision_macro(num_classes, predict, truth):
 
 
 def recall_micro(num_classes, predict, truth):
+    predict = torch.tensor([torch.argmax(predict[i]) for i in range(predict.size()[0])]) # make as index-based classified tensor to compre naturally
+    truth = torch.tensor([torch.argmax(truth[i]) for i in range(truth.size()[0])])
+
     true_p_of_all_c = 0
     false_n_of_all_c = 0
     for c in range(num_classes):
@@ -40,6 +49,9 @@ def recall_micro(num_classes, predict, truth):
 
 
 def recall_macro(num_classes, predict, truth):
+    predict = torch.tensor([torch.argmax(predict[i]) for i in range(predict.size()[0])]) # make as index-based classified tensor to compre naturally
+    truth = torch.tensor([torch.argmax(truth[i]) for i in range(truth.size()[0])])
+
     sum_of_recall_of_class_c = 0
     for c in range(num_classes):
         quad = quadrant(class_index=c, predict=predict, truth=truth)
@@ -50,9 +62,6 @@ def recall_macro(num_classes, predict, truth):
 
 # it gets "one-hot vector" version of "truth" and "predict"
 def f1score(num_classes, predict, truth, precision, recall):
-    predict_index = torch.tensor([torch.argmax(predict[i]) for i in range(predict.size()[0])])
-    truth_index = torch.tensor([torch.argmax(truth[i]) for i in range(truth.size()[0])])
-    print("predict_index", predict_index)
-    pval = precision(num_classes=num_classes, predict=predict_index, truth=truth_index)
-    rval = recall(num_classes=num_classes, predict=predict_index, truth=truth_index)
+    pval = precision(num_classes=num_classes, predict=predict, truth=truth)
+    rval = recall(num_classes=num_classes, predict=predict, truth=truth)
     return 2 * (pval * rval) / (pval + rval)
