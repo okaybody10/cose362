@@ -21,7 +21,7 @@ ne = df['NE'].to_list()
 # tokenizer
 train_texts, test_texts, train_ne, test_ne = train_test_split(texts, ne, test_size=0.2, random_state=42) # fix training dataset
 train_dataset = CustomDataset(train_texts, train_ne)
-train_loader = DataLoader(train_dataset, batch_size = 32, shuffle=True, collate_fn=collect_fn)
+train_loader = DataLoader(train_dataset, batch_size = 256, shuffle=True, collate_fn=collect_fn)
 
 model_type = 'SVM' # Option: SVM, CRF & argparser
 if model_type == 'SVM' :
@@ -41,12 +41,13 @@ for epoch in range(epochs) :
         for i, data in enumerate(pbar) :
             pbar.set_description(f"Epoch {epoch}")
             batch_train, batch_label = data['texts'].to(device), data['labels'].to(device)
-            optimizer = optim.SGD(model.parameters(), lr=0.01)
+            optimizer = optim.SGD(model.parameters(), lr=0.05, momentum=0.9)
             optimizer.zero_grad()
 
             model.eval()
             with torch.no_grad() : 
                 output = model.predict_index(batch_train).to(device)
+                print(output, batch_label)
                 correct_label = torch.sum((output == batch_label) & (batch_label != 33) & (batch_label))
                 accuracy = correct_label / torch.sum(batch_label != 33)
             model.train()
