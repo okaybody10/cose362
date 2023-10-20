@@ -12,9 +12,10 @@ devices = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # label preprocess
 label_list = ['PS', 'FD', 'TR', 'AF', 'OG', 'LC', 'CV', 'DT', 'TI', 'TI', 'QT', 'EV', 'AM', 'PT', 'MT', "TM"] 
-label_fin = ['O']
+label_fin = []
 label_fin += ['B-' + i for i in label_list]
 label_fin += ['I-' + i for i in label_list]
+label_fin += ['O']
 label_to_idx = {label: idx for idx, label in enumerate(label_fin)}
 idx_to_label = {idx: label for idx, label in enumerate(label_fin)}
 

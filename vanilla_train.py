@@ -54,19 +54,22 @@ for epoch in range(epochs) :
             loss = model(batch_train, batch_label)
             running_loss += loss.item()
 
-            if i % 1000 == 999 :
+            if i % 100 == 99 :
                 writer.add_scalar('training_loss',
                                   running_loss / 1000,
-                                  epoch * len(train_loader) + i)
+                                  epoch * len(train_loader) + i + 1)
                 running_loss = 0.0
                 writer.add_scalar('accuracy',
                                   accuracy.item(),
-                                  epoch * len(train_loader) + i)
+                                  epoch * len(train_loader) + i + 1)
+                writer.add_scalar('correct labels',
+                                  correct_label.item(),
+                                  epoch * len(train_loader) + i + 1)
 
             loss.backward()
             optimizer.step()
 
-            pbar.set_postfix(loss = loss.item(), accuracy = accuracy.item())
+            pbar.set_postfix(loss = loss.item(), accuracy = accuracy.item(), correct_label = correct_label.item())
     # One epoch ends
     state = {
         'epoch' : epoch,
