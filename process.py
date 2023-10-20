@@ -77,23 +77,23 @@ def tagging(words: List[str], ne_lists: List[Dict[str, Any]]) -> List[str] :
     return results
 
 def collect_fn(batch) :
-        tokenizer = get_tokenizer()
-        model = get_kobert_model()
-        model.eval() # Only get embeddings
-        print(batch, type(batch))
-        convert_batch = {key: [i[key] for i in batch] for key in batch[0]}
-        texts = convert_batch['texts']
-        labels = convert_batch['labels']
-        sentence = tokenizer(texts, padding = True, truncation = True, return_tensors = 'pt') # Input_ids, token_type_ids, attention_mask
-        tags = [tagging(tokenizer.convert_ids_to_tokens(index), label) for (index, label) in zip(sentence['input_ids'], labels)]
-        # Embedding
-        embeddings = model.embeddings.word_embeddings(sentence['input_ids']) # (Batch, max_len, 768)
-        # tags = tagging(tokenizer.convert_ids_to_tokens(sentence['input_ids']), self.labels[index])
-        convert_tags = [[-100 if i in ['[CLS]', '[SEP]', '[PAD]'] else label_to_idx[i] for i in tag] for tag in tags] # (Batch, max_len)
-        return {
-            'texts' : embeddings,
-            'labels' : convert_tags
-        } # Collect_fn?
+    tokenizer = get_tokenizer()
+    model = get_kobert_model()
+    model.eval() # Only get embeddings
+    convert_batch = {key: [i[key] for i in batch] for key in batch[0]}
+    texts = convert_batch['texts']
+    labels = convert_batch['labels']
+    sentence = tokenizer(texts, padding = True, truncation = True, return_tensors = 'pt') # Input_ids, token_type_ids, attention_mask
+    tags = [tagging(tokenizer.convert_ids_to_tokens(index), label) for (index, label) in zip(sentence['input_ids'], labels)]
+    # Embedding
+    embeddings = model.embeddings.word_embeddings(sentence['input_ids']) # (Batch, max_len, 768)
+    # tags = tagging(tokenizer.convert_ids_to_tokens(sentence['input_ids']), self.labels[index])
+    convert_tags = [[33 if i in ['[CLS]', '[SEP]', '[PAD]'] else label_to_idx[i] for i in tag] for tag in tags] # (Batch, max_len)
+    convert_tags = torch.tensor(convert_tags)
+    return {
+        'texts' : embeddings,
+        'labels' : convert_tags
+    } # Collect_fn?
 
 class CustomDataset(Dataset) :
     def __init__(self, texts, labels) -> None:
@@ -122,6 +122,7 @@ class CustomDataset(Dataset) :
         # } # Collect_fn?
 
 if __name__ == "__main__" :
+    print(len(label_fin))
     # load files
     df = load_files() # Have to control path (argparser)
     texts = df['form'].to_list()
@@ -131,5 +132,5 @@ if __name__ == "__main__" :
     tokenizer = get_tokenizer()
     train_texts, test_texts, train_ne, test_ne = train_test_split(texts, ne, test_size=0.2, random_state=42)
     test_dataset = CustomDataset(test_texts, test_ne)
-    test_loader = DataLoader(test_dataset, batch_size = 16, shuffle=True, collate_fn=collect_fn)
+    test_loader = DataLoader(test_dataset, batch_size = 32, shuffle=True, collate_fn=collect_fn)
     # Return: texts: (Batch, token_num, 768) / labels : (Batch, token_num)
