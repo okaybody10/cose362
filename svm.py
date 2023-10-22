@@ -11,22 +11,12 @@ def _one_hot(labels: torch.Tensor, num_classes) -> torch.LongTensor:
     return F.one_hot(labels, num_classes=num_classes) # One-hot vector
 class KernelSVM(nn.Module):
     # f should be a function from torch : number of feature -> torch : new space.
-    def __init__(self, input_dim=768, num_classes=34, kernel=(lambda x: x), C=1.0, margin=1.0):
+    def __init__(self, input_dim=768, num_classes=34, C=1.0, margin=1.0):
         super(KernelSVM, self).__init__()
         self.linear = nn.Linear(input_dim, num_classes, bias=True).to(device)
         self.C = C
-        self.kernelToMatrix = lambda x: torch.stack([kernel(x[i]) for i in range(x.size()[0])])
         self.num_classes = num_classes
         self.margin = margin
-
-    # def train(self, X, y, epochs=100):
-    #     # kernel_x = self.kernelToMatrix(X)
-    #     optimizer = optim.SGD(self.parameters(), lr=0.01)
-    #     for epoch in range(epochs):
-    #         optimizer.zero_grad()
-    #         loss = self(X, y)
-    #         loss.backward()
-    #         optimizer.step()
 
     def multiclass_hinge_loss_one_hot(self, outputs : torch.Tensor, y : torch.Tensor) -> torch.float :
         y = y.unsqueeze(-1).type(torch.LongTensor).to(device)
