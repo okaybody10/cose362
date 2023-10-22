@@ -6,16 +6,16 @@
   - [x] Re-labeling
   - [x] Handling json
 - [ ] Compare 1, Vanilla
-  - [ ] SVM
+  - [x] SVM
   - [ ] CRF
 - [ ] Compare 2, BiLSTM
   - [ ] SVM
   - [ ] CRF
   - [ ] Accelerator
-- [ ] Compare 3, Bert
+- [x] Compare 3, Bert
   - [ ] SVM
-  - [ ] CRF
-  - [ ] Accelerator
+  - [x] CRF
+  - [x] Accelerator
 
 # Preprocess
 ## DataLoader
