@@ -40,7 +40,7 @@ def load_files(path='./dataset/NLNE2202211219.json') :
 We will return the label of given words, using the ne_lists
 We use BIO-tagging
 '''
-def tagging(words: List[str], ne_lists: List[Dict[str, Any]]) -> List[str] :
+def tagging(words: List[str], ne_lists: List[Dict[str, Any]], bert_check= False) -> List[str] :
     results = [i if i in ['[CLS]', '[SEP]', '[PAD]'] else 'O' for i in words] # If token is not Special, initialize 'O' tag
     ps_words = [i.replace('##', '').replace('▁','') for i in words]
     ne_cnt = len(ne_lists)
@@ -76,6 +76,8 @@ def tagging(words: List[str], ne_lists: List[Dict[str, Any]]) -> List[str] :
             if ne_idx + 1 == ne_cnt and ne_label == 0:
                 ne_idx = back_idx
                 ne_label = back_label
+    if bert_check :
+        return results
     O_idx = np.where(np.array(results)=="O")[0]
     drop_idx = np.random.choice(O_idx, size = int(np.round(0.3 * len(O_idx))))
     select_idx = np.delete(np.arange(len(results)), drop_idx) # select_idx
@@ -111,6 +113,9 @@ def collect_fn(batch) :
         'labels' : convert_tags
     } # Collect_fn?
 
+def collect_fn_bert(batch) :
+    convert_batch = {key: [i[key] for i in batch] for key in batch[0]}
+    return convert_batch
 class CustomDataset(Dataset) :
     def __init__(self, texts, labels) -> None:
         self.texts = texts
