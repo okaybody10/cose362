@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -14,8 +15,9 @@ from transformers.trainer_pt_utils import get_parameter_names
 from tqdm import tqdm
 
 # Training
+model_base = "SVM"
 traing_args = TrainingArguments(
-    output_dir="./checkpoints/Bert_CRF_checkpoints",
+    output_dir=f"./checkpoints/Bert_{model_base}_checkpoints/",
     per_device_train_batch_size=32,
     gradient_accumulation_steps=8,
     learning_rate=5e-5,
@@ -26,8 +28,10 @@ traing_args = TrainingArguments(
     # **default_args
 ) # Optional
 
-model_base = "CRF"
-PATH = f'./checkpoints/Bert_{model_base}_checkpoints'
+PATH = traing_args.output_dir
+
+if not os.path.exists(PATH) :
+    os.makedirs(PATH)
 
 df = load_files() # Have to control path (argparser)
 texts = df['form'].to_list()
@@ -62,44 +66,71 @@ scheduler = get_linear_schedule_with_warmup(optimizer, traing_args.warmup_steps,
 accelerator = Accelerator()
 model, train_loader, test_loader, optimizer, scheduler = accelerator.prepare(model, train_loader, test_loader, optimizer, scheduler)
 
-model.train() 
 running_loss = 0.0
+correct_label_wr, total_label_wr = 0, 0
 
-writer = SummaryWriter('./runs/' + model_base)
+writer = SummaryWriter('./runs/bert/' + model_base)
 
 for epoch in range(traing_args.num_train_epochs) :
+    model.train() 
     with tqdm(train_loader, unit="batch") as pbar:
         for i, data in enumerate(pbar) :
             optimizer.zero_grad()
-            pbar.set_description(f"Epoch {epoch}")
-            optimizer.zero_grad()
+            pbar.set_description(f"Epoch {epoch+1}")
             batch_train, batch_label = data['texts'], data['labels']
-            now_loss, output, batch_labels, pad_output = model(batch_train, batch_label) # Output
-            now_loss *= -1
-            running_loss += now_loss.mean()
-            correct_label = torch.sum((pad_output == batch_labels) & (batch_labels != 35))
-            accuracy = correct_label / torch.sum(batch_labels != 35)
+            with accelerator.accumulate(model) :
+            # TODO: Seperate SVM & CRF
+                now_loss, batch_labels, pad_output = model(batch_train, batch_label) # Output
+                if model_base == "CRF" :
+                    now_loss *= -1
+                    running_loss += now_loss.mean()
+                else :
+                    running_loss += now_loss
+                accelerator.backward(now_loss.mean())
+                optimizer.step()
+                scheduler.step()
+            correct_label_wr += torch.sum((pad_output == batch_labels) & (batch_labels != 35) & (batch_labels != 32))
+            total_label_wr += torch.sum((batch_labels != 35) & (batch_labels != 32))
             if i % 100 == 99 :
-                writer.add_scalar('training_loss',
+                writer.add_scalar('train/training_loss',
                                   running_loss / 1000,
                                   epoch * len(train_loader) + i + 1)
                 running_loss = 0.0
-                writer.add_scalar('accuracy',
-                                  accuracy.item(),
-                                  epoch * len(train_loader) + i + 1)
-                writer.add_scalar('correct labels',
-                                  correct_label.item(),
-                                  epoch * len(train_loader) + i + 1)
-            accelerator.backward(now_loss.mean())
-            optimizer.step()
-            scheduler.step()
 
-            pbar.set_postfix(loss = now_loss.mean().item(), accuracy = accuracy.item(), correct_label = correct_label.item())
+            pbar.set_postfix(loss = now_loss.mean().item(), correct_label = correct_label_wr.item(), total_label = total_label_wr.item())
     # One epoch ends
+    accuracy = correct_label_wr / total_label_wr
+    writer.add_scalar('train/accuracy',
+                        accuracy.item(),
+                        epoch + 1)
+    writer.add_scalar('train/correct labels',
+                        correct_label_wr.item(),
+                        epoch + 1)
+    correct_label_wr, total_label_wr = 0, 0
+    # Save state
+    # accelerator.save_model(model, traing_args.output_dir)
     state = {
         'epoch' : epoch,
         'state_dict' : model.state_dict(),
         'optimizer' : optimizer.state_dict(),
         'loss' : now_loss
     }
-    torch.save(state, PATH + model_base + f"{epoch}.pt")
+    torch.save(state, PATH + model_base + f"{epoch+1}_edit.pkl")
+    # Validation Part
+    print("==========Validation Start==========")
+    correct_val, totals_val = 0, 0
+    model.eval()
+    with torch.no_grad() :
+        for data in test_loader :
+            batch_test, batch_test_label = data['texts'], data['labels']
+            _, batch_val_labels, val_pad_output = model(batch_test, batch_test_label)
+            correct_val += torch.sum((val_pad_output == batch_val_labels) & (batch_val_labels != 35) & (batch_val_labels != 32))
+            totals_val += torch.sum((batch_val_labels != 35) & (batch_val_labels != 32))
+    accuracy_val = correct_val / totals_val
+    print(f"Correct labels: {correct_val.item()}, total labels: {totals_val.item()}, so accuracy is: {accuracy_val.item()}")
+    writer.add_scalar('val/validation_accuracy',
+                      accuracy_val.item(),
+                      epoch + 1)
+    writer.add_scalar('val/validation_labels',
+                      correct_val.item(),
+                      epoch + 1)

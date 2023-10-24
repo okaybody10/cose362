@@ -36,7 +36,6 @@ class KernelSVM(nn.Module):
     def forward(self, X, y):
         output = self.linear(X).to(device)
         hinge_loss = self.multiclass_hinge_loss_one_hot(output, y)
-        print(hinge_loss)
         reg_loss = 0.5 * torch.norm(self.linear.weight, p=2)
         total_loss = hinge_loss + self.C * reg_loss # Fix regularization term
         return total_loss
