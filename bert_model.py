@@ -9,7 +9,7 @@ from torch.nn.utils.rnn import pad_sequence
 # Input: (sentence, ne_lists) <- CustomDataset
 # DataLoader: (Batch, Sentence, ne_lists)
 def label_init() :
-    label_list = ['PS', 'FD', 'TR', 'AF', 'OG', 'LC', 'CV', 'DT', 'TI', 'TI', 'QT', 'EV', 'AM', 'PT', 'MT', "TM"] 
+    label_list = ['PS', 'FD', 'TR', 'AF', 'OG', 'LC', 'CV', 'DT', 'TI', 'QT', 'EV', 'AM', 'PT', 'MT', "TM"] 
     label_fin = []
     label_fin += ['B-' + i for i in label_list]
     label_fin += ['I-' + i for i in label_list]
@@ -25,10 +25,10 @@ def label_init() :
 Model with Bert + CRF
 '''
 class NERBertCRF(nn.Module) :
-    def __init__(self, num_classes= 36, dropout = 0.1) -> None: 
+    def __init__(self, num_classes= 34, dropout = 0.1) -> None: 
         super(NERBertCRF, self).__init__()
         self.device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
-        self.num_classes = num_classes + 1
+        self.num_classes = num_classes
         self.tokenizer = get_tokenizer()
         self.bert = get_kobert_model()
         self.dropout = nn.Dropout(p=dropout) # Setting dropout
@@ -54,15 +54,25 @@ class NERBertCRF(nn.Module) :
         outputs = [torch.LongTensor(i) for i in predict_tags]
         outputs.append(labels[-1])
         outputs = torch.LongTensor(pad_sequence(outputs, batch_first=True, padding_value=PAD_ID)[:-1]).to(self.device)
-        return log_likelihood, labels, outputs, masks
+        return log_likelihood, labels, outputs
+    
+    def predict(self, texts) :
+        tokens = self.tokenizer(texts, padding=True, truncation=True, return_tensors= 'pt').to(self.device) # Return input_token, attention_mask, input_ids with padding
+        masks = torch.BoolTensor([[0 if i in ['[PAD]'] else 1 for i in x] for x in tokens]).to(self.device)
+        sentence_output = self.bert(**tokens)[0]
+        outpus_d = self.dropout(sentence_output)
+        emission = self.linear(outpus_d)
+        predict_tags = self.CRF.viterbi_decode(emission, masks)
+        return predict_tags
 
 '''
 Model with Bert + SVM
 '''
 class NERBertSVM(nn.Module) :
-    def __init__(self, num_classes= 36, dropout = 0.1) -> None: 
+    def __init__(self, num_classes= 34, dropout = 0.1) -> None: 
         super(NERBertSVM, self).__init__()
         self.device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
+        self.num_classes = num_classes
         self.tokenizer = get_tokenizer()
         self.bert = get_kobert_model()
         self.dropout = nn.Dropout(p=dropout) # Setting dropout
@@ -85,3 +95,10 @@ class NERBertSVM(nn.Module) :
         loss, outputs = self.svm.forward(outpus_d, labels), self.svm.predict_index(outpus_d)
         # Predict loss
         return loss, labels, outputs
+    
+    def predict(self, texts) :
+        tokens = self.tokenizer(texts, padding=True, truncation=True, return_tensors= 'pt').to(self.device) # Return input_token, attention_mask, input_ids with padding
+        sentence_output = self.bert(**tokens)[0]
+        outpus_d = self.dropout(sentence_output)
+        predict_tags = self.svm.predict_index(outpus_d) # Result: Padding
+        return predict_tags

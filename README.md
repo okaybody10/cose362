@@ -5,7 +5,7 @@
   - [x] DataLoader
   - [x] Re-labeling
   - [x] Handling json
-- [ ] Compare 1, Vanilla
+- [x] Compare 1, Vanilla
   - [x] SVM
   - [ ] CRF
 - [ ] Compare 2, BiLSTM
@@ -13,7 +13,7 @@
   - [ ] CRF
   - [ ] Accelerator
 - [x] Compare 3, Bert
-  - [ ] SVM
+  - [x] SVM
   - [x] CRF
   - [x] Accelerator
 
@@ -44,11 +44,6 @@
 * [Tutorial](https://tutorials.pytorch.kr/beginner/nlp/advanced_tutorial.html)
 * Maybe implement in vanilla.py
 
-# LSTM
-* [Tutorial](https://tutorials.pytorch.kr/beginner/nlp/advanced_tutorial.html)
-* We don't use huggingface so we will use Pytorch Lightening
-* Refer this [link](https://www.kaggle.com/code/megner/pytorch-lightning-lstm)
-
 # KoBERT
 * Use monologg/kobert, refer this [github](https://github.com/monologg/KoBERT-Transformers)
 * We will use [Accelerator](https://huggingface.co/docs/accelerate/package_reference/accelerator) in huggingface
@@ -66,3 +61,14 @@ anaconda install python=3.7 pytorch=1.10.2 pandas scikit-learn
 pip install git+https://git@github.com/SKTBrain/KoBERT.git@master kobert-transformers
 ```
 3. Create `./dataset` directory and place `NLNE2202211219.json` file from 국립국어원 말뭉치 in it.
+
+# Future work (after project, only assigns to @okaybody10)
+
+1. LSTM
+* [Tutorial](https://tutorials.pytorch.kr/beginner/nlp/advanced_tutorial.html)
+* We don't use huggingface so we will use Pytorch Lightening
+* Refer this [link](https://www.kaggle.com/code/megner/pytorch-lightning-lstm)
+
+2. Argparser (Code cleaning)
+
+3. Decoding
